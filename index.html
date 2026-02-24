@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cổng Thông Tin Sinh Viên</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 15px; text-align: center; }
     .card { background: white; max-width: 450px; margin: 0 auto; padding: 30px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid #2980b9; }
@@ -15,8 +16,12 @@
     .line-name { font-size: 26px; font-weight: 800; color: #2980b9; text-transform: uppercase; margin-bottom: 5px; line-height: 1.2; }
     .line-dob { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 5px; }
     .line-unit { font-size: 28px; font-weight: 900; color: #d35400; margin-bottom: 20px; letter-spacing: 1px; }
-    #qr-frame { padding: 10px; background-color: white !important; border: 2px solid #000; border-radius: 8px; display: inline-block; }
-    #qr-image { width: 280px; height: 280px; display: block; image-rendering: pixelated; }
+    
+    /* Tối ưu lại khung chứa QR để nét hơn */
+    #qr-frame { padding: 15px; background-color: white !important; border: 2px solid #000; border-radius: 8px; display: inline-block; }
+    #qr-image { width: 250px; height: 250px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+    #qr-image img, #qr-image canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+    
     .blink { animation: blinker 2s linear infinite; color: #e74c3c; font-weight: bold; margin-top: 15px; font-size: 14px; }
     @keyframes blinker { 50% { opacity: 0.5; } }
   </style>
@@ -33,14 +38,18 @@
       <div id="resName" class="line-name"></div>
       <div id="resDob" class="line-dob"></div>
       <div id="resUnit" class="line-unit"></div>
-      <div id="qr-frame"><img id="qr-image" src="" alt="QR Code" /></div>
+      
+      <div id="qr-frame">
+        <div id="qr-image"></div>
+      </div>
+      
       <p style="font-family:monospace; font-size:16px; font-weight:bold; margin-top:5px; color:#7f8c8d;">MSV: <span id="code-text"></span></p>
       <div class="blink">⚠️ TĂNG SÁNG MÀN HÌNH ĐỂ QUÉT</div>
     </div>
   </div>
 
   <script>
-    // BẠN HÃY DÁN LINK WEB APP CỦA BẠN VÀO GIỮA 2 DẤU NGOẶC KÉP Ở DƯỚI NHÉ:
+    // BẠN NHỚ DÁN LẠI LINK WEB APP CỦA BẠN VÀO ĐÂY NHÉ:
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnDumAjyXNfoN2gWDQjRta97h4qrSllm3MnUwCEfg43RBRndAvE0KalRUZbnKS6LlShg/exec"; 
 
     function timKiem() {
@@ -51,7 +60,6 @@
       document.getElementById("result-area").style.display = "none";
       document.getElementById("error-msg").innerText = "";
 
-      // Dùng Fetch API gọi tới Google Apps Script thay vì google.script.run
       fetch(WEB_APP_URL + "?api=tim_sv&msv=" + encodeURIComponent(ma))
         .then(response => response.json())
         .then(data => showResult(data))
@@ -72,10 +80,20 @@
         var cleanCode = String(data.maSV).replace(/\s+/g, '').toUpperCase();
         document.getElementById("code-text").innerText = cleanCode;
         
-        // Vẫn dùng cách tạo QR cực chuẩn của bạn
-        var apiUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(cleanCode) + "&ecLevel=L&size=500&margin=4&dark=000000&light=ffffff";
-        document.getElementById("qr-image").src = apiUrl;
+        // --- BƯỚC VẼ QR CODE SIÊU TỐC TRỰC TIẾP TRÊN TRÌNH DUYỆT ---
+        var qrContainer = document.getElementById("qr-image");
+        qrContainer.innerHTML = ""; // Xóa mã QR cũ nếu có
         
+        new QRCode(qrContainer, {
+          text: cleanCode,
+          width: 500,  // Độ phân giải thực tế của ảnh tạo ra (cao để nét)
+          height: 500,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.L // Giữ nguyên chuẩn sửa lỗi L của bạn
+        });
+        // -------------------------------------------------------------
+
         document.getElementById("result-area").style.display = "block";
       } else {
         document.getElementById("error-msg").innerText = data.message;
