@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Thông Tin Sinh Viên</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 15px; text-align: center; }
+    .card { background: white; max-width: 450px; margin: 0 auto; padding: 30px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid #2980b9; }
+    h2 { margin-top: 0; color: #2980b9; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; }
+    input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #3498db; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; color: #333; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background-color: #2980b9; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    button:active { background-color: #1c6ea4; transform: scale(0.98); }
+    #result-area { display: none; margin-top: 25px; }
+    .line-name { font-size: 26px; font-weight: 800; color: #2980b9; text-transform: uppercase; margin-bottom: 5px; line-height: 1.2; }
+    .line-dob { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 5px; }
+    .line-unit { font-size: 28px; font-weight: 900; color: #d35400; margin-bottom: 20px; letter-spacing: 1px; }
+    #qr-frame { padding: 10px; background-color: white !important; border: 2px solid #000; border-radius: 8px; display: inline-block; }
+    #qr-image { width: 280px; height: 280px; display: block; image-rendering: pixelated; }
+    .blink { animation: blinker 2s linear infinite; color: #e74c3c; font-weight: bold; margin-top: 15px; font-size: 14px; }
+    @keyframes blinker { 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>CỔNG THÔNG TIN SINH VIÊN</h2>
+    <input type="text" id="maSVInput" placeholder="Nhập Mã Số..." onkeydown="if(event.key === 'Enter') timKiem()" />
+    <button onclick="timKiem()">XEM THẺ</button>
+    <div id="loading" style="display:none; margin:15px; color:#2980b9; font-weight:bold;">⚡ Đang tìm siêu tốc...</div>
+    <div id="error-msg" style="color:red; font-weight:bold; margin-top:10px;"></div>
+    
+    <div id="result-area">
+      <div id="resName" class="line-name"></div>
+      <div id="resDob" class="line-dob"></div>
+      <div id="resUnit" class="line-unit"></div>
+      <div id="qr-frame"><img id="qr-image" src="" alt="QR Code" /></div>
+      <p style="font-family:monospace; font-size:16px; font-weight:bold; margin-top:5px; color:#7f8c8d;">MSV: <span id="code-text"></span></p>
+      <div class="blink">⚠️ TĂNG SÁNG MÀN HÌNH ĐỂ QUÉT</div>
+    </div>
+  </div>
+
+  <script>
+    // BẠN HÃY DÁN LINK WEB APP CỦA BẠN VÀO GIỮA 2 DẤU NGOẶC KÉP Ở DƯỚI NHÉ:
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnDumAjyXNfoN2gWDQjRta97h4qrSllm3MnUwCEfg43RBRndAvE0KalRUZbnKS6LlShg/exec"; 
+
+    function timKiem() {
+      var ma = document.getElementById("maSVInput").value;
+      if(!ma) return alert("Vui lòng nhập mã!");
+      
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("result-area").style.display = "none";
+      document.getElementById("error-msg").innerText = "";
+
+      // Dùng Fetch API gọi tới Google Apps Script thay vì google.script.run
+      fetch(WEB_APP_URL + "?api=tim_sv&msv=" + encodeURIComponent(ma))
+        .then(response => response.json())
+        .then(data => showResult(data))
+        .catch(error => {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("error-msg").innerText = "Lỗi kết nối mạng hoặc lỗi máy chủ!";
+        });
+    }
+
+    function showResult(data) {
+      document.getElementById("loading").style.display = "none";
+      if (data.success) {
+        document.getElementById("resName").innerText = data.hoTen.toUpperCase();
+        document.getElementById("resDob").innerText = data.ngaySinh;
+        var fullUnit = (data.donViNho || "") + (data.tenDaiDoi || "");
+        document.getElementById("resUnit").innerText = fullUnit;
+        
+        var cleanCode = String(data.maSV).replace(/\s+/g, '').toUpperCase();
+        document.getElementById("code-text").innerText = cleanCode;
+        
+        // Vẫn dùng cách tạo QR cực chuẩn của bạn
+        var apiUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(cleanCode) + "&ecLevel=L&size=500&margin=4&dark=000000&light=ffffff";
+        document.getElementById("qr-image").src = apiUrl;
+        
+        document.getElementById("result-area").style.display = "block";
+      } else {
+        document.getElementById("error-msg").innerText = data.message;
+      }
+    }
+  </script>
+</body>
+</html>
