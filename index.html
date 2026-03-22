@@ -56,6 +56,10 @@
       var ma = document.getElementById("maSVInput").value;
       if(!ma) return alert("Vui lòng nhập mã!");
       
+      // XỬ LÝ ĐA CHIỀU: Dù nhập CDD... hay CĐ... thì đều quy về CĐ... để tìm trong Database
+      ma = convertVietnameseToCode(ma);
+      ma = restoreVietnameseFromCode(ma);
+      
       document.getElementById("loading").style.display = "block";
       document.getElementById("result-area").style.display = "none";
       document.getElementById("error-msg").innerText = "";
@@ -138,6 +142,23 @@
       // Ví dụ: Á -> A, É -> E, Í -> I...
       str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       
+      return str;
+    }
+
+    // ==========================================================
+    // HÀM DỊCH NGƯỢC: TỪ MÃ KHÔNG DẤU (CDD) -> VỀ MÃ GỐC (CĐ)
+    // ==========================================================
+    function restoreVietnameseFromCode(str) {
+      if (!str) return "";
+      str = String(str).trim().toUpperCase();
+      // Quy ước dịch ngược lại để khớp với Database
+      str = str.replace(/DD/g, "Đ");
+      str = str.replace(/AA/g, "Â");
+      str = str.replace(/AW/g, "Ă");
+      str = str.replace(/OO/g, "Ô");
+      str = str.replace(/EE/g, "Ê");
+      str = str.replace(/OW/g, "Ơ");
+      str = str.replace(/UW/g, "Ư");
       return str;
     }
   </script>
