@@ -77,8 +77,8 @@
         var fullUnit = (data.donViNho || "") + (data.tenDaiDoi || "");
         document.getElementById("resUnit").innerText = fullUnit;
         
-        // Chỉ làm sạch khoảng trắng và viết hoa, không thay đổi ký tự gốc
-        var cleanCode = String(data.maSV).trim().toUpperCase();
+        // SỬA: Chuyển đổi mã sang dạng không dấu chuẩn hóa (DD, AA, AW...) để tạo QR sạch
+        var cleanCode = convertVietnameseToCode(data.maSV);
         
         document.getElementById("code-text").innerText = cleanCode;
         
@@ -87,7 +87,7 @@
         qrContainer.innerHTML = ""; // Xóa mã QR cũ nếu có
         
         new QRCode(qrContainer, {
-          text: cleanCode, // Sử dụng mã gốc (có dấu) để tạo QR
+          text: cleanCode, // Sử dụng mã đã chuẩn hóa (VD: CDD...)
           width: 500,  // Độ phân giải thực tế của ảnh tạo ra (cao để nét)
           height: 500,
           colorDark : "#000000",
@@ -100,6 +100,45 @@
       } else {
         document.getElementById("error-msg").innerText = data.message;
       }
+    }
+
+    // ==========================================================
+    // HÀM CHUYÊN GIA: CHUẨN HÓA MÃ TIẾNG VIỆT SANG KHÔNG DẤU
+    // ==========================================================
+    function convertVietnameseToCode(str) {
+      if (!str) return "";
+      str = String(str).trim().toUpperCase();
+      
+      // Bước 1: Đưa về dạng tổ hợp (NFC) để xử lý các ký tự đặc biệt
+      str = str.normalize("NFC");
+      
+      // Bước 2: Thay thế các ký tự có dấu đặc trưng theo quy ước
+      // Đ -> DD
+      str = str.replace(/[Đ]/g, "DD");
+      
+      // Â, Ấ, Ầ... -> AA
+      str = str.replace(/[ÂẤẦẨẪẬ]/g, "AA");
+      
+      // Ă, Ắ, Ằ... -> AW
+      str = str.replace(/[ĂẮẰẲẴẶ]/g, "AW");
+      
+      // Ô, Ố, Ồ... -> OO
+      str = str.replace(/[ÔỐỒỔỖỘ]/g, "OO");
+      
+      // Ê, Ế, Ề... -> EE
+      str = str.replace(/[ÊẾỀỂỄỆ]/g, "EE");
+      
+      // Ơ, Ớ, Ờ... -> OW
+      str = str.replace(/[ƠỚỜỞỠỢ]/g, "OW");
+      
+      // Ư, Ứ, Ừ... -> UW
+      str = str.replace(/[ƯỨỪỬỮỰ]/g, "UW");
+      
+      // Bước 3: Loại bỏ các dấu thanh còn lại (sắc, huyền, hỏi, ngã, nặng)
+      // Ví dụ: Á -> A, É -> E, Í -> I...
+      str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      return str;
     }
   </script>
 </body>
